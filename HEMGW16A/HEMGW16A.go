@@ -5,6 +5,7 @@ import (
 	"encoding/binary"
 	"encoding/hex"
 	"errors"
+	"fmt"
 	"io/ioutil"
 	"math"
 	"net/http"
@@ -140,10 +141,15 @@ func (hem GW) GetTodayBuyWatt() float64 {
 
 	// 収集日を確認
 	var day uint16
-	res := hem.getPropertyM("0xE2")
-	binary.Read(bytes.NewBuffer(res[0:2]), binary.BigEndian, &day)
-	if day != 0 {
-		panic(errors.New("set date error"))
+	var res []byte
+	for {
+		res = hem.getPropertyM("0xE2")
+		binary.Read(bytes.NewBuffer(res[0:2]), binary.BigEndian, &day)
+		if day != 0 {
+			fmt.Println("set date error")
+		} else {
+			break
+		}
 	}
 
 	// 積算電力量履歴(正方向)を取得

@@ -31,12 +31,12 @@ var (
 
 // Update update
 func Update(gw hemgw16a.GW) {
-	defer func() {
-		if err := recover(); err != nil {
-			fmt.Println("Runtime Error:", err)
-		}
-	}()
 	for {
+		defer func() {
+			if err := recover(); err != nil {
+				fmt.Println("Runtime Error:", err)
+			}
+		}()
 		todatBuyWattHour.Set(gw.GetTodayBuyWatt())
 		nowWattHour.Set(float64(gw.GetNowWatt()))
 	}
