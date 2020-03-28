@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"log"
 	"net/http"
 
@@ -21,36 +22,24 @@ var (
 		Name:      "now_watthour",
 		Help:      "Now WattHout (wh)",
 	})
-	todatBuyWattHour = prometheus.NewCounter(prometheus.CounterOpts{
+	todatBuyWattHour = prometheus.NewGauge(prometheus.GaugeOpts{
 		Namespace: namespace,
 		Name:      "today_buy_watthour",
 		Help:      "Today buy WattHout (wh)",
 	})
 )
 
-// HWMGW16ACollector コレクタ
-type HWMGW16ACollector struct {
-	gw hemgw16a.GW
-}
-
-// Collect 取得と投げるとこ
-func (c HWMGW16ACollector) Collect(ch chan<- prometheus.Metric) {
-	ch <- prometheus.MustNewConstMetric(
-		todatBuyWattHour.Desc(),
-		prometheus.CounterValue,
-		float64(c.gw.GetTodayBuyWatt()),
-	)
-	ch <- prometheus.MustNewConstMetric(
-		nowWattHour.Desc(),
-		prometheus.GaugeValue,
-		float64(c.gw.GetNowWatt()),
-	)
-}
-
-// Describe お掃除
-func (c HWMGW16ACollector) Describe(ch chan<- *prometheus.Desc) {
-	ch <- todatBuyWattHour.Desc()
-	ch <- nowWattHour.Desc()
+// Update update
+func Update(gw hemgw16a.GW) {
+	defer func() {
+		if err := recover(); err != nil {
+			fmt.Println("Runtime Error:", err)
+		}
+	}()
+	for {
+		todatBuyWattHour.Set(gw.GetTodayBuyWatt())
+		nowWattHour.Set(float64(gw.GetNowWatt()))
+	}
 }
 
 func main() {
@@ -63,10 +52,13 @@ func main() {
 	password := flag.String("password", "pass", "HEMGW16A user password")
 	flag.Parse()
 
-	var collector HWMGW16ACollector
-	collector.gw.Init(*url, *username, *password)
+	var gw hemgw16a.GW
+	gw.Init(*url, *username, *password)
 
-	prometheus.MustRegister(collector)
+	go Update(gw)
+
+	prometheus.MustRegister(nowWattHour)
+	prometheus.MustRegister(todatBuyWattHour)
 
 	http.Handle("/metrics", promhttp.Handler())
 	log.Fatal(http.ListenAndServe(*port, nil))

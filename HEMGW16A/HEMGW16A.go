@@ -76,7 +76,7 @@ func (hem GW) getPropertyM(epc string) []byte {
 	url := hem.rootURL + "/php/get_property_m.php"
 	refererURL := hem.rootURL + "/smartmeter.html"
 
-	req, _ := http.NewRequest("GET", url, nil)
+	req, err := http.NewRequest("GET", url, nil)
 	req.Header.Set("Referer", refererURL)
 	req.SetBasicAuth(hem.username, hem.password)
 
@@ -87,9 +87,13 @@ func (hem GW) getPropertyM(epc string) []byte {
 	req.URL.RawQuery = params.Encode()
 
 	client := new(http.Client)
-	resp, _ := client.Do(req)
+	resp, err := client.Do(req)
 
-	byteArray, _ := ioutil.ReadAll(resp.Body)
+	byteArray, err := ioutil.ReadAll(resp.Body)
+
+	if err != nil {
+		panic(errors.New("getPropertyM error :" + url + " " + string(byteArray)))
+	}
 
 	ret, _ := hex.DecodeString(strings.Replace(string(byteArray), "0x", "", 1))
 
