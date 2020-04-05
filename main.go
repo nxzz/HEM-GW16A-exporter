@@ -6,9 +6,9 @@ import (
 	"log"
 	"net/http"
 
-	hemgw16a "./HEMGW16A"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	hemgw16a "local.packages/HEMGW16A"
 )
 
 // Metrics
